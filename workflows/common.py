@@ -19,7 +19,7 @@ async def run_query(cfg: Config, query: str):
 
     try:
         async with httpx.AsyncClient() as client:
-            async with client.stream("POST", url=cfg.url, headers=headers, params=params) as response:
+            async with client.stream("POST", url=cfg.url, headers=headers, params=params, timeout=cfg.timeout) as response:
                 # Check for ant errors
                 response.raise_for_status()
                 async for chunk in response.aiter_bytes(chunk_size=cfg.chunk_size):
