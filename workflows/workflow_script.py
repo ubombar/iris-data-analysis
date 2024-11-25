@@ -94,20 +94,16 @@ async def get_results_table_optimized(m: objects.Measurement, num_rows: int, lim
 
     # Determine the name of the binary data
     filepath = f"../data/ip_data/{m.measurement_uuid}-{ff.get_timestr()}/{m.table_name}.bin"
-    num_pairs_written = 0
-    num_pairs_expected = num_rows
+    i = 0
+    num_bytes_expected = num_rows
 
     num_bytes_downloaded = 0
     
     try:
         with ff.BinaryFile(filepath, dummy=False) as bf:
             async for chunk in common.run_query(cfg, q):
-                # b, ok = from_csv_to_int(row)
-                # if not ok: continue
-                # num_pairs_written += 1
-
                 # pbar.update(6 / (1024*1024)) # one row is 6 bytes
-                if num_pairs_written % pbar_update == 0: 
+                if i % pbar_update == 0: 
                     pbar.update(num_bytes_downloaded / (1024*1024))
                     num_bytes_downloaded = 0
 
@@ -118,11 +114,12 @@ async def get_results_table_optimized(m: objects.Measurement, num_rows: int, lim
                 in_memory_bytesio.close() # close the bytesio object
 
                 num_bytes_downloaded += len(chunk)
+                i += 1
     except Exception as e:
         print(f"Exception on {m.table_name}, exitting")
-        return (False, num_pairs_expected, num_pairs_written)
+        return (False, num_bytes_expected, num_bytes_downloaded)
 
-    return (True, num_pairs_expected, num_pairs_written)
+    return (True, num_bytes_expected, num_bytes_downloaded)
 
 async def get_results_table_optimized_from_list(m_list: list[objects.Measurement], limit: int=1):
     num_rows_list = await asyncio.gather(*[get_number_of_row(m) for m in m_list])
@@ -150,11 +147,12 @@ async def get_results_table_optimized_from_list(m_list: list[objects.Measurement
     #     p.starmap()
 
 async def main():
-    ok_expected_writted_list = await get_results_table_optimized_from_list(selected_measurements_list, limit=1_000_000)
+    ok_expected_writted_list = await get_results_table_optimized_from_list(selected_measurements_list, limit=0)
 
     for m, ok_exp_writ in zip(selected_measurements_list, ok_expected_writted_list):
         ok, expected, written = ok_exp_writ
-        print(f"For agent {m.agent_uuid} {written}/{expected} pairs are saved with {'success' if ok else 'error'}")
+        expected, written = expected // (1024*1024), written // (1024*1024)
+        print(f"For agent {m.agent_uuid} {written:.2f}/{expected:.2f} MB saved with {'success' if ok else 'error'}")
 
     # await get_results_table_optimized(selected_measurements_list[0], 1, limit=1)
 
