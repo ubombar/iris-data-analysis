@@ -55,7 +55,7 @@ async def run_query_iter_lines(cfg: Config, query: str):
             async with client.stream("POST", url=cfg.url, headers=headers, params=params, timeout=cfg.timeout) as response:
                 # Check for ant errors
                 response.raise_for_status()
-                async for chunk in response.aiter_bytes(chunk_size=cfg.chunk_size):
+                async for chunk in response.aiter_lines():
                     # Skip for keepalive messages
                     if not chunk: continue
 

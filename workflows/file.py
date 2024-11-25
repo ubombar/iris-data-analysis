@@ -43,7 +43,7 @@ class TemporaryFile:
     def __exit__(self, exc_type, exc_value, _):        
         # Handle exceptions if needed (optional)
         if exc_type:
-            print(f"An exception occurred: {exc_type}, {exc_value}")
+            raise Exception(f"An exception occurred: {exc_type}, {exc_value}")
 
         self.close()
         self.delete()
@@ -51,19 +51,24 @@ class TemporaryFile:
         return True
     
 class BinaryFile():
-    def __init__(self, filepath: str, create_parent: bool=True):
-        if create_parent:
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            
-        self.filepath = filepath
-        self.file = None
+    def __init__(self, filepath: str, create_parent: bool=True, dummy: bool=False):
+        self.dummy = dummy
+
+        if not self.dummy:
+            if create_parent:
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                
+            self.filepath = filepath
+            self.file = None
         
     def __enter__(self):
-        self.file = open(self.filepath, "wb+") # Opening for writing in binary and seekable.
+        if not self.dummy:
+            self.file = open(self.filepath, "wb+") # Opening for writing in binary and seekable.
         return self
     
     def write(self, b: bytes):
-        self.file.write(b)
+        if not self.dummy:
+            self.file.write(b)
 
     def __exit__(self, exc_type, exc_value, _):        
         # Handle exceptions if needed (optional)
