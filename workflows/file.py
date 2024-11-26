@@ -50,6 +50,7 @@ class TemporaryFile:
         
         return True
     
+    
 class BinaryFile():
     def __init__(self, filepath: str, create_parent: bool=True, dummy: bool=False):
         self.dummy = dummy
